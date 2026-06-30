@@ -269,6 +269,7 @@
   .manager-contact { font-size: .85rem; color: var(--gray); margin-top: 3px; }
   .manager-contact a { color: var(--green); text-decoration: none; font-weight: 600; }
   .manager-contact a:hover { text-decoration: underline; }
+  
   /* ── Loading ── */
   .loading { text-align: center; color: var(--gray); font-size: .88rem; padding: 12px 0; }
 </style>
@@ -327,39 +328,60 @@
 </div>
 
 <script>
+  // ── Configuration ──
+  const GITHUB_OWNER = "rohitdarbar1";
+  const GITHUB_REPO = "july2026market1";
+  const BOOKINGS_FILE = "bookings.json";
+
   // ── State ──
   let selectedDate = null;
   let bookings = {}; // { "2026-07-DD": "Name" }
+  let fileSha = null; // For updating the file
 
   // July 2026: starts on Wednesday (day index 3), 31 days
   const YEAR = 2026, MONTH = 6; // JS month 0-indexed
   const TOTAL_DAYS = 31;
   const START_DOW  = new Date(2026, 6, 1).getDay(); // Dynamically get correct DOW
 
-  // ── Anthropic API for persistent storage ──
-  const STORAGE_KEY = "market_duty_july2026_v1";
-
+  // ── GitHub API Functions ──
   async function loadBookings() {
     try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          system: `You manage a key-value store for a vegetable market duty survey.
-The store key is "${STORAGE_KEY}".
-When asked to GET, reply ONLY with the JSON object stored, or {} if empty. No explanation.
-When asked to SET with data, reply ONLY with: SAVED`,
-          messages: [{ role: "user", content: `GET ${STORAGE_KEY}` }]
-        })
-      });
-      const data = await resp.json();
-      const text = data.content?.find(b => b.type === "text")?.text?.trim() || "{}";
-      try { bookings = JSON.parse(text); } catch { bookings = {}; }
+      // Try to fetch the bookings.json file from the repo
+      const resp = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${BOOKINGS_FILE}`,
+        {
+          headers: {
+            Accept: "application/vnd.github.v3.raw"
+          }
+        }
+      );
+
+      if (resp.status === 404) {
+        // File doesn't exist yet - start fresh
+        bookings = {};
+      } else if (resp.ok) {
+        const text = await resp.text();
+        try { 
+          bookings = JSON.parse(text); 
+        } catch { 
+          bookings = {}; 
+        }
+        // Also fetch the SHA for updates
+        const metaResp = await fetch(
+          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${BOOKINGS_FILE}`
+        );
+        if (metaResp.ok) {
+          const metaData = await metaResp.json();
+          fileSha = metaData.sha;
+        }
+      } else {
+        bookings = {};
+      }
     } catch (e) {
+      console.error("Error loading bookings:", e);
       bookings = {};
     }
+
     renderCalendar();
     renderBookingsList();
     document.getElementById("loadingMsg").style.display = "none";
@@ -367,18 +389,58 @@ When asked to SET with data, reply ONLY with: SAVED`,
   }
 
   async function saveBookings() {
+    // Prompt for GitHub Personal Access Token
+    const token = prompt(
+      "🔐 Enter your GitHub Personal Access Token (with 'repo' scope):\n\n" +
+      "Create one at: https://github.com/settings/tokens\n" +
+      "(You only need to check 'repo' for full control)",
+      ""
+    );
+
+    if (!token) {
+      showToast("❌ Token required to save.", true);
+      return false;
+    }
+
+    const content = btoa(JSON.stringify(bookings, null, 2)); // Base64 encode
+
     try {
-      await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 100,
-          system: `You manage a key-value store. When asked to SET key=value, store it and reply only: SAVED`,
-          messages: [{ role: "user", content: `SET ${STORAGE_KEY} = ${JSON.stringify(bookings)}` }]
-        })
-      });
-    } catch (e) { /* silent */ }
+      const body = {
+        message: `Update market duty bookings - ${new Date().toLocaleString()}`,
+        content: content,
+        branch: "main"
+      };
+
+      if (fileSha) {
+        body.sha = fileSha;
+      }
+
+      const resp = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${BOOKINGS_FILE}`,
+        {
+          method: "PUT",
+          headers: {
+            "Authorization": `token ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body)
+        }
+      );
+
+      if (resp.ok) {
+        const result = await resp.json();
+        fileSha = result.content.sha;
+        return true;
+      } else {
+        const error = await resp.json();
+        showToast(`❌ Save failed: ${error.message}`, true);
+        return false;
+      }
+    } catch (e) {
+      console.error("Error saving bookings:", e);
+      showToast("❌ Network error while saving.", true);
+      return false;
+    }
   }
 
   // ── Calendar ──
@@ -403,7 +465,6 @@ When asked to SET with data, reply ONLY with: SAVED`,
       const isSelected = selectedDate === key;
 
       const cell = document.createElement("div");
-      // DOW: START_DOW offset + (d-1), mod 7. Tue=2, Fri=5
       const dow = (START_DOW + (d - 1)) % 7;
       const isChicken = dow === 2 || dow === 5;
       cell.className = "cal-day" + (isChicken ? " chicken-day" : "");
@@ -418,7 +479,6 @@ When asked to SET with data, reply ONLY with: SAVED`,
         cell.setAttribute("data-tooltip", `Taken by ${takenBy}`);
         const nameEl = document.createElement("div");
         nameEl.className = "taken-name";
-        // Show first name only to fit
         nameEl.textContent = takenBy.split(" ")[0];
         cell.appendChild(nameEl);
       } else if (isSelected) {
@@ -481,14 +541,16 @@ When asked to SET with data, reply ONLY with: SAVED`,
     }
 
     bookings[selectedDate] = name;
-    await saveBookings();
-
     const day = parseInt(selectedDate.split("-")[2]);
-    showToast(`🎉 Done! ${name} is on duty for July ${day}, 2026.`);
-    selectedDate = null;
-    document.getElementById("name").value = "";
-    renderCalendar();
-    renderBookingsList();
+
+    const saved = await saveBookings();
+    if (saved) {
+      showToast(`🎉 Done! ${name} is on duty for July ${day}, 2026.`);
+      selectedDate = null;
+      document.getElementById("name").value = "";
+      renderCalendar();
+      renderBookingsList();
+    }
   }
 
   // ── Init ──
