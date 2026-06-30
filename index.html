@@ -432,21 +432,6 @@
             margin-bottom: 20px;
             border-left: 4px solid #0c5460;
         }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid #667eea;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -521,20 +506,18 @@
     </div>
 
     <script>
-        // GitHub raw content URL for bookings
-        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/rohitdarbar1/july2026market1/main/bookings.json';
-        const GITHUB_API_URL = 'https://api.github.com/repos/rohitdarbar1/july2026market1/contents/bookings.json';
+        const STORAGE_KEY = 'july2026_bookings';
         
         let selectedDate = null;
         let bookings = [];
-        let fileSha = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadBookings();
+            renderCalendar();
             setupEventListeners();
-            // Auto-refresh every 3 seconds
-            setInterval(loadBookings, 3000);
+            // Auto-refresh every 2 seconds
+            setInterval(loadBookings, 2000);
         });
 
         function setupEventListeners() {
@@ -658,85 +641,37 @@
             
             bookings.push(newBooking);
             
-            // Save to GitHub
-            const saved = await saveToGitHub();
+            // Save to localStorage
+            saveBookings();
             
-            if (saved) {
-                showMessage(`✓ Success! ${name} is scheduled for ${selectedDate}`, 'success', messageDiv);
-                
-                // Reset form
-                setTimeout(() => {
-                    document.getElementById('surveyForm').reset();
-                    selectedDate = null;
-                    document.getElementById('selectedDate').classList.remove('active');
-                    document.querySelectorAll('.calendar-day.selected').forEach(el => {
-                        el.classList.remove('selected');
-                    });
-                    messageDiv.innerHTML = '';
-                    renderCalendar();
-                    loadBookings();
-                }, 1500);
-            } else {
-                showMessage('Error saving booking. Please try again.', 'error', messageDiv);
-                bookings.pop();
-            }
-        }
-
-        async function saveToGitHub() {
-            try {
-                const content = btoa(JSON.stringify(bookings, null, 2));
-                
-                const response = await fetch(GITHUB_API_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: `Update bookings - ${new Date().toISOString()}`,
-                        content: content,
-                        sha: fileSha
-                    })
+            showMessage(`✓ Success! ${name} is scheduled for ${selectedDate}`, 'success', messageDiv);
+            
+            // Reset form
+            setTimeout(() => {
+                document.getElementById('surveyForm').reset();
+                selectedDate = null;
+                document.getElementById('selectedDate').classList.remove('active');
+                document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                    el.classList.remove('selected');
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    fileSha = data.content.sha;
-                    return true;
-                }
-                return false;
+                messageDiv.innerHTML = '';
+                renderCalendar();
+            }, 1500);
+        }
+
+        function saveBookings() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
             } catch (error) {
-                console.error('Error saving to GitHub:', error);
-                return false;
+                console.error('Error saving bookings:', error);
             }
         }
 
-        async function loadBookings() {
+        function loadBookings() {
             try {
-                // Try to get the file SHA first
-                if (!fileSha) {
-                    const apiResponse = await fetch(GITHUB_API_URL, {
-                        headers: {
-                            'Accept': 'application/vnd.github.v3+json',
-                        }
-                    });
-                    
-                    if (apiResponse.ok) {
-                        const data = await apiResponse.json();
-                        fileSha = data.sha;
-                    }
-                }
-                
-                // Load bookings from raw content
-                const response = await fetch(GITHUB_RAW_URL);
-                
-                if (response.ok) {
-                    const text = await response.text();
-                    if (text.trim()) {
-                        bookings = JSON.parse(text);
-                    } else {
-                        bookings = [];
-                    }
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    bookings = JSON.parse(stored);
                 } else {
                     bookings = [];
                 }
