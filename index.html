@@ -143,18 +143,38 @@
         .calendar-day {
             aspect-ratio: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             border: 2px solid #e0e0e0;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             background: white;
             transition: all 0.3s;
             font-weight: 500;
+            position: relative;
+            padding: 2px;
         }
 
-        .calendar-day:hover:not(.disabled):not(.empty) {
+        .calendar-day-num {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .calendar-day-name {
+            font-size: 9px;
+            color: #c33;
+            margin-top: 2px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+            text-align: center;
+        }
+
+        .calendar-day:hover:not(.disabled):not(.empty):not(.booked) {
             background: #667eea;
             color: white;
             border-color: #667eea;
@@ -177,7 +197,10 @@
             background: #667eea;
             color: white;
             border-color: #667eea;
-            font-weight: 700;
+        }
+
+        .calendar-day.selected .calendar-day-name {
+            color: white;
         }
 
         .calendar-day.booked {
@@ -185,6 +208,22 @@
             color: #c33;
             border-color: #ff6666;
             cursor: not-allowed;
+        }
+
+        .calendar-day.booked:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
         }
 
         .selected-date {
@@ -247,6 +286,18 @@
             font-size: 14px;
         }
 
+        .refresh-indicator {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .refresh-indicator.updating {
+            color: #667eea;
+            font-weight: 600;
+        }
+
         .bookings-list {
             max-height: 600px;
             overflow-y: auto;
@@ -262,6 +313,18 @@
             justify-content: space-between;
             align-items: center;
             transition: all 0.3s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .booking-item:hover {
@@ -273,12 +336,12 @@
             font-weight: 700;
             color: #667eea;
             font-size: 16px;
+            min-width: 70px;
         }
 
         .booking-name {
             color: #333;
             font-weight: 500;
-            margin-top: 5px;
             font-size: 14px;
         }
 
@@ -374,6 +437,16 @@
         .export-btn:hover {
             background: #218838;
         }
+
+        .manager-info {
+            background: #f0f8ff;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #0c5460;
+            margin-bottom: 20px;
+            border-left: 4px solid #0c5460;
+        }
     </style>
 </head>
 <body>
@@ -382,6 +455,10 @@
         <div class="form-section">
             <h1>📋 July 2026 Market Survey</h1>
             <p>Schedule your market visit for vegetable shopping</p>
+
+            <div class="manager-info">
+                👨‍💼 <strong>Manager:</strong> Rohit Darbar | 📞 8637564212
+            </div>
 
             <div id="formMessage" class="message"></div>
 
@@ -420,7 +497,11 @@
         <!-- Bookings Section -->
         <div class="bookings-section">
             <h2>📅 Current Bookings</h2>
-            <p>Dates booked by group members</p>
+            <p>Dates booked by all group members</p>
+
+            <div class="refresh-indicator" id="refreshIndicator">
+                ⟳ Live updates every 2 seconds
+            </div>
 
             <div class="stats">
                 <div class="stat-box">
@@ -442,26 +523,30 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'july2026_bookings';
+        // Use GitHub API to store and retrieve data
+        const GITHUB_API = 'https://api.github.com/repos/rohitdarbar1/july2026market1/contents/bookings.json';
+        const GITHUB_TOKEN = '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'; // Use public method
         
         let selectedDate = null;
-        let currentMonth = 7; // July
+        let currentMonth = 7;
         let currentYear = 2026;
         let bookings = [];
+        let fileData = { sha: null, content: null };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             renderCalendar();
             loadBookings();
             setupEventListeners();
-            setInterval(loadBookings, 3000); // Auto-refresh every 3 seconds
+            // Auto-refresh every 2 seconds for everyone to see updates
+            setInterval(loadBookings, 2000);
         });
 
         function setupEventListeners() {
             document.getElementById('prevMonth').addEventListener('click', (e) => {
                 e.preventDefault();
                 if (currentMonth === 7 && currentYear === 2026) {
-                    return; // Don't go before July 2026
+                    return;
                 }
                 currentMonth--;
                 if (currentMonth < 1) {
@@ -493,10 +578,8 @@
             
             monthYear.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
             
-            // Clear previous days
             calendarDays.innerHTML = '';
             
-            // Get first day of month and number of days
             const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
             
@@ -511,12 +594,12 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayCell = document.createElement('div');
                 dayCell.className = 'calendar-day';
-                dayCell.textContent = day;
                 
                 const dateStr = formatDate(new Date(currentYear, currentMonth - 1, day));
                 
                 // Check if date is booked
-                const isBooked = bookings.some(b => b.date === dateStr);
+                const bookedPerson = bookings.find(b => b.date === dateStr);
+                const isBooked = !!bookedPerson;
                 
                 // Disable past dates (only if viewing July 2026)
                 const today = new Date();
@@ -525,9 +608,18 @@
                 cellDate.setHours(0, 0, 0, 0);
                 const isPast = cellDate < today && currentMonth === 7 && currentYear === 2026;
                 
+                const numEl = document.createElement('div');
+                numEl.className = 'calendar-day-num';
+                numEl.textContent = day;
+                dayCell.appendChild(numEl);
+
                 if (isBooked) {
                     dayCell.classList.add('booked');
-                    dayCell.style.cursor = 'not-allowed';
+                    dayCell.setAttribute('data-tooltip', `Booked by ${bookedPerson.name}`);
+                    const nameEl = document.createElement('div');
+                    nameEl.className = 'calendar-day-name';
+                    nameEl.textContent = bookedPerson.name.split(' ')[0];
+                    dayCell.appendChild(nameEl);
                 } else if (isPast) {
                     dayCell.classList.add('disabled');
                 } else {
@@ -543,7 +635,6 @@
         }
 
         function selectDate(dateStr, element) {
-            // Remove previous selection
             document.querySelectorAll('.calendar-day.selected').forEach(el => {
                 el.classList.remove('selected');
             });
@@ -605,46 +696,118 @@
             
             bookings.push(newBooking);
             
-            // Save to localStorage
-            saveBookings();
+            // Save to GitHub
+            const saved = await saveToGitHub();
             
-            showMessage(`✓ Success! ${name} is scheduled for ${selectedDate}`, 'success', messageDiv);
-            
-            // Reset form
-            setTimeout(() => {
-                document.getElementById('surveyForm').reset();
-                selectedDate = null;
-                document.getElementById('selectedDate').classList.remove('active');
-                document.querySelectorAll('.calendar-day.selected').forEach(el => {
-                    el.classList.remove('selected');
-                });
-                renderCalendar();
-                loadBookings();
-                messageDiv.innerHTML = '';
-            }, 2000);
-        }
-
-        function saveBookings() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-            } catch (error) {
-                console.error('Error saving bookings:', error);
-                showMessage('Error saving booking. Please try again.', 'error', document.getElementById('formMessage'));
+            if (saved) {
+                showMessage(`✓ Success! ${name} is scheduled for ${selectedDate}`, 'success', messageDiv);
+                
+                // Reset form
+                setTimeout(() => {
+                    document.getElementById('surveyForm').reset();
+                    selectedDate = null;
+                    document.getElementById('selectedDate').classList.remove('active');
+                    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    messageDiv.innerHTML = '';
+                    renderCalendar();
+                    loadBookings();
+                }, 2000);
+            } else {
+                showMessage('Error saving booking. Please try again.', 'error', messageDiv);
+                bookings.pop(); // Remove the booking if save failed
             }
         }
 
-        function loadBookings() {
+        async function saveToGitHub() {
             try {
-                // Load from localStorage
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    bookings = JSON.parse(stored);
-                } else {
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(bookings, null, 2))));
+                
+                const response = await fetch(GITHUB_API, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: `Update bookings - ${new Date().toISOString()}`,
+                        content: content,
+                        sha: fileData.sha
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    fileData.sha = data.content.sha;
+                    return true;
+                } else if (response.status === 404) {
+                    // File doesn't exist, create it
+                    return await createBookingsFile();
+                }
+                return false;
+            } catch (error) {
+                console.error('Error saving to GitHub:', error);
+                return false;
+            }
+        }
+
+        async function createBookingsFile() {
+            try {
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(bookings, null, 2))));
+                
+                const response = await fetch(GITHUB_API, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: `Create bookings file - ${new Date().toISOString()}`,
+                        content: content
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    fileData.sha = data.content.sha;
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error creating bookings file:', error);
+                return false;
+            }
+        }
+
+        async function loadBookings() {
+            try {
+                const response = await fetch(GITHUB_API, {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    fileData.sha = data.sha;
+                    
+                    if (data.content) {
+                        const decodedContent = atob(data.content);
+                        bookings = JSON.parse(decodedContent);
+                    }
+                } else if (response.status === 404) {
+                    // File doesn't exist yet
                     bookings = [];
+                    fileData.sha = null;
                 }
                 
                 updateBookingsList();
                 renderCalendar();
+                
+                // Update refresh indicator
+                const now = new Date();
+                document.getElementById('refreshIndicator').textContent = `⟳ Updated at ${now.toLocaleTimeString()} - Live updates every 2 seconds`;
             } catch (error) {
                 console.error('Error loading bookings:', error);
             }
