@@ -328,57 +328,40 @@
 </div>
 
 <script>
-  // ── Configuration ──
-  const GITHUB_OWNER = "rohitdarbar1";
-  const GITHUB_REPO = "july2026market1";
-  const BOOKINGS_FILE = "bookings.json";
+  // ── JSON Server Configuration ──
+  const JSON_SERVER_URL = "http://localhost:3000"; // Change to your deployed JSON Server URL
 
   // ── State ──
   let selectedDate = null;
   let bookings = {}; // { "2026-07-DD": "Name" }
-  let fileSha = null; // For updating the file
 
   // July 2026: starts on Wednesday (day index 3), 31 days
   const YEAR = 2026, MONTH = 6; // JS month 0-indexed
   const TOTAL_DAYS = 31;
   const START_DOW  = new Date(2026, 6, 1).getDay(); // Dynamically get correct DOW
 
-  // ── GitHub API Functions ──
+  // ── JSON Server Data Functions ──
   async function loadBookings() {
     try {
-      // Try to fetch the bookings.json file from the repo
-      const resp = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${BOOKINGS_FILE}`,
-        {
-          headers: {
-            Accept: "application/vnd.github.v3.raw"
-          }
-        }
-      );
+      const resp = await fetch(`${JSON_SERVER_URL}/bookings`);
 
-      if (resp.status === 404) {
-        // File doesn't exist yet - start fresh
-        bookings = {};
-      } else if (resp.ok) {
-        const text = await resp.text();
-        try { 
-          bookings = JSON.parse(text); 
-        } catch { 
-          bookings = {}; 
-        }
-        // Also fetch the SHA for updates
-        const metaResp = await fetch(
-          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${BOOKINGS_FILE}`
-        );
-        if (metaResp.ok) {
-          const metaData = await metaResp.json();
-          fileSha = metaData.sha;
+      if (resp.ok) {
+        const data = await resp.json();
+        // Convert array to object format if needed
+        if (Array.isArray(data)) {
+          bookings = {};
+          data.forEach(item => {
+            bookings[item.date] = item.name;
+          });
+        } else {
+          bookings = data || {};
         }
       } else {
         bookings = {};
       }
     } catch (e) {
       console.error("Error loading bookings:", e);
+      showToast("⚠️ Could not connect to server. Make sure JSON Server is running.", true);
       bookings = {};
     }
 
@@ -389,56 +372,23 @@
   }
 
   async function saveBookings() {
-    // Prompt for GitHub Personal Access Token
-    const token = prompt(
-      "🔐 Enter your GitHub Personal Access Token (with 'repo' scope):\n\n" +
-      "Create one at: https://github.com/settings/tokens\n" +
-      "(You only need to check 'repo' for full control)",
-      ""
-    );
-
-    if (!token) {
-      showToast("❌ Token required to save.", true);
-      return false;
-    }
-
-    const content = btoa(JSON.stringify(bookings, null, 2)); // Base64 encode
-
     try {
-      const body = {
-        message: `Update market duty bookings - ${new Date().toLocaleString()}`,
-        content: content,
-        branch: "main"
-      };
-
-      if (fileSha) {
-        body.sha = fileSha;
-      }
-
-      const resp = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${BOOKINGS_FILE}`,
-        {
-          method: "PUT",
-          headers: {
-            "Authorization": `token ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body)
-        }
-      );
+      // Send updated data to JSON Server
+      const resp = await fetch(`${JSON_SERVER_URL}/bookings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookings)
+      });
 
       if (resp.ok) {
-        const result = await resp.json();
-        fileSha = result.content.sha;
         return true;
       } else {
-        const error = await resp.json();
-        showToast(`❌ Save failed: ${error.message}`, true);
+        showToast(`❌ Save failed: Server error`, true);
         return false;
       }
     } catch (e) {
       console.error("Error saving bookings:", e);
-      showToast("❌ Network error while saving.", true);
+      showToast("❌ Network error while saving. Check if JSON Server is running.", true);
       return false;
     }
   }
