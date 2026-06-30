@@ -1,518 +1,735 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🥦 Market Duty Survey – July 2026</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>July 2026 Market Survey - Schedule Your Visit</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
 
-  :root {
-    --green:   #2d6a4f;
-    --green-lt:#52b788;
-    --green-bg:#d8f3dc;
-    --cream:   #fefae0;
-    --amber:   #e9c46a;
-    --red:     #e63946;
-    --gray:    #6c757d;
-    --white:   #ffffff;
-    --shadow:  0 4px 24px rgba(45,106,79,.13);
-  }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: linear-gradient(135deg, #d8f3dc 0%, #b7e4c7 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 32px 16px 64px;
-  }
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
 
-  .card {
-    background: var(--white);
-    border-radius: 20px;
-    box-shadow: var(--shadow);
-    width: 100%;
-    max-width: 560px;
-    overflow: hidden;
-  }
+        /* Form Section */
+        .form-section {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
 
-  /* ── Header ── */
-  .header {
-    background: var(--green);
-    padding: 28px 32px 24px;
-    color: var(--white);
-  }
-  .header-emoji { font-size: 2.4rem; display: block; margin-bottom: 6px; }
-  .header h1 { font-family: 'DM Serif Display', serif; font-size: 1.55rem; line-height: 1.25; }
-  .header p  { margin-top: 6px; font-size: .9rem; opacity: .82; }
+        .form-section h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
 
-  /* ── Manager Glass Card (in header) ── */
-  .manager-glass {
-    margin-top: 18px;
-    background: rgba(255,255,255,.14);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,.25);
-    border-radius: 16px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .manager-glass-avatar {
-    width: 42px; height: 42px;
-    background: rgba(255,255,255,.22);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,.35);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-  .manager-glass-info { flex: 1; text-align: left; }
-  .manager-glass-label { font-size: .66rem; font-weight: 600; color: rgba(255,255,255,.8); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
-  .manager-glass-name  { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--white); }
-  .manager-glass-contact { font-size: .8rem; margin-top: 2px; }
-  .manager-glass-contact a { color: rgba(255,255,255,.9); text-decoration: none; font-weight: 600; }
-  .manager-glass-contact a:hover { text-decoration: underline; }
+        .form-section p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
 
-  /* ── Form body ── */
-  .form-body { padding: 20px 20px 24px; }
+        .form-group {
+            margin-bottom: 25px;
+        }
 
-  .field { margin-bottom: 24px; }
-  label  { display: block; font-weight: 600; font-size: .88rem; color: var(--green); margin-bottom: 8px; letter-spacing: .03em; text-transform: uppercase; }
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
 
-  input[type="text"] {
-    width: 100%;
-    border: 2px solid #dee2e6;
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-size: 1rem;
-    font-family: inherit;
-    transition: border-color .2s;
-    outline: none;
-  }
-  input[type="text"]:focus { border-color: var(--green-lt); }
+        input[type="text"],
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
 
-  /* ── Calendar ── */
-  .cal-header {
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 14px;
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem;
-    color: var(--green);
-  }
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-  .day-labels {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
-    margin-bottom: 4px;
-  }
-  .day-label {
-    text-align: center;
-    font-size: .65rem;
-    font-weight: 600;
-    color: var(--gray);
-    padding: 2px 0;
-  }
+        .calendar-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
 
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
-  }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
 
-  .cal-day {
-    aspect-ratio: 1;
-    border-radius: 7px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: .78rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1.5px solid transparent;
-    transition: all .18s;
-    position: relative;
-    padding: 1px;
-    min-height: 0;
-  }
-  .cal-day:hover:not(.taken):not(.empty):not(.past) {
-    background: var(--green-bg);
-    border-color: var(--green-lt);
-  }
-  .cal-day.selected {
-    background: var(--green);
-    color: var(--white);
-    border-color: var(--green);
-  }
-  .cal-day.taken {
-    background: #ffeef0;
-    border-color: #ffccd1;
-    cursor: not-allowed;
-    color: var(--red);
-  }
-  .cal-day.empty { cursor: default; }
-  .cal-day.past  { opacity: .35; cursor: not-allowed; }
-  .day-tag {
-    display: none;
-  }
+        .calendar-header button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
 
-  .taken-name {
-    font-size: .48rem;
-    font-weight: 600;
-    color: var(--red);
-    text-align: center;
-    line-height: 1;
-    margin-top: 1px;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    width: 100%;
-    padding: 0 1px;
-  }
+        .calendar-header button:hover {
+            background: #764ba2;
+        }
 
-  .cal-day-num { line-height: 1; }
+        .calendar-header h3 {
+            color: #333;
+            font-size: 16px;
+        }
 
-  /* ── Tooltip ── */
-  .cal-day.taken:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: #fff;
-    font-size: .75rem;
-    padding: 5px 9px;
-    border-radius: 7px;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 10;
-  }
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
 
-  /* ── Submit ── */
-  .btn {
-    width: 100%;
-    padding: 13px;
-    background: var(--green);
-    color: var(--white);
-    font-family: inherit;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background .2s, transform .1s;
-    margin-top: 8px;
-  }
-  .btn:hover  { background: #1b4332; }
-  .btn:active { transform: scale(.98); }
+        .weekday {
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 12px;
+            padding: 8px;
+        }
 
-  .btn-secondary {
-    background: var(--amber);
-    color: #333;
-    margin-top: 8px;
-  }
-  .btn-secondary:hover { background: #d4a957; }
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
 
-  /* ── Toast ── */
-  .toast {
-    display: none;
-    background: var(--green);
-    color: var(--white);
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin-top: 18px;
-    font-size: .95rem;
-    text-align: center;
-    font-weight: 500;
-  }
-  .toast.error { background: var(--red); }
-  .toast.show  { display: block; }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            background: white;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
 
-  /* ── Bookings list ── */
-  .bookings-section { border-top: 1px solid #f0f0f0; padding: 20px 32px 28px; }
-  .bookings-section h3 { font-family: 'DM Serif Display', serif; color: var(--green); margin-bottom: 14px; font-size: 1.05rem; }
-  .booking-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 14px; border-radius: 10px;
-    background: var(--green-bg); margin-bottom: 8px;
-    font-size: .9rem;
-  }
-  .booking-date { font-weight: 700; color: var(--green); min-width: 52px; }
-  .booking-name { color: #333; }
-  .no-bookings  { color: var(--gray); font-size: .88rem; font-style: italic; }
+        .calendar-day:hover:not(.disabled):not(.empty) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
 
-  .export-btn {
-    width: 100%;
-    padding: 10px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: .9rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  .export-btn:hover { background: #218838; }
+        .calendar-day.empty {
+            cursor: default;
+            background: transparent;
+            border: none;
+        }
 
-  /* ── Loading ── */
-  .loading { text-align: center; color: var(--gray); font-size: .88rem; padding: 12px 0; }
-</style>
+        .calendar-day.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            background: #f0f0f0;
+            border-color: #e0e0e0;
+        }
+
+        .calendar-day.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            font-weight: 700;
+        }
+
+        .calendar-day.booked {
+            background: #ffcccc;
+            color: #c33;
+            border-color: #ff6666;
+            cursor: not-allowed;
+        }
+
+        .selected-date {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            border-radius: 5px;
+            color: #2e7d32;
+            font-weight: 600;
+            display: none;
+        }
+
+        .selected-date.active {
+            display: block;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 30px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Bookings Section */
+        .bookings-section {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .bookings-section h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .bookings-section p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .bookings-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .booking-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .booking-item:hover {
+            background: #efefef;
+            transform: translateX(5px);
+        }
+
+        .booking-date {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .booking-name {
+            color: #333;
+            font-weight: 500;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .booking-info {
+            flex: 1;
+        }
+
+        .booking-badge {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Form Section -->
+        <div class="form-section">
+            <h1>📋 July 2026 Market Survey</h1>
+            <p>Schedule your market visit for vegetable shopping</p>
 
-<div class="card">
-  <div class="header">
-    <span class="header-emoji">🥕🛒</span>
-    <h1>Market Duty Survey</h1>
-    <p>Pick your date to buy vegetables — July 2026. One date per person.</p>
+            <div id="formMessage" class="message"></div>
 
-    <div class="manager-glass">
-      <div class="manager-glass-avatar">👨‍💼</div>
-      <div class="manager-glass-info">
-        <div class="manager-glass-label">July 2026 Manager</div>
-        <div class="manager-glass-name">Rohit</div>
-        <div class="manager-glass-contact">📞 <a href="tel:8637564212">8637564212</a></div>
-      </div>
+            <form id="surveyForm">
+                <div class="form-group">
+                    <label for="memberName">Your Name *</label>
+                    <input type="text" id="memberName" name="memberName" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Date from July 2026 *</label>
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button type="button" id="prevMonth">← Previous</button>
+                            <h3 id="monthYear">July 2026</h3>
+                            <button type="button" id="nextMonth">Next →</button>
+                        </div>
+                        <div class="weekdays">
+                            <div class="weekday">Sun</div>
+                            <div class="weekday">Mon</div>
+                            <div class="weekday">Tue</div>
+                            <div class="weekday">Wed</div>
+                            <div class="weekday">Thu</div>
+                            <div class="weekday">Fri</div>
+                            <div class="weekday">Sat</div>
+                        </div>
+                        <div class="calendar-days" id="calendarDays"></div>
+                    </div>
+                    <div class="selected-date" id="selectedDate"></div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">Submit Survey</button>
+            </form>
+        </div>
+
+        <!-- Bookings Section -->
+        <div class="bookings-section">
+            <h2>📅 Current Bookings</h2>
+            <p>Dates booked by group members</p>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalBookings">0</div>
+                    <div class="stat-label">Total Bookings</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="availableDates">31</div>
+                    <div class="stat-label">Available Dates</div>
+                </div>
+            </div>
+
+            <div class="bookings-list" id="bookingsList">
+                <div class="empty-message">No bookings yet. Be the first to schedule your visit!</div>
+            </div>
+
+            <button class="export-btn" onclick="exportToExcel()">📊 Export to Excel</button>
+        </div>
     </div>
-  </div>
 
-  <div class="form-body">
-    <!-- Name -->
-    <div class="field">
-      <label for="name">1. Your Name</label>
-      <input type="text" id="name" placeholder="Enter your full name" autocomplete="off" />
-    </div>
+    <script>
+        const STORAGE_KEY = 'july2026_bookings';
+        
+        let selectedDate = null;
+        let currentMonth = 7; // July
+        let currentYear = 2026;
+        let bookings = [];
 
-    <!-- Calendar -->
-    <div class="field">
-      <label>2. Choose Your Market Date</label>
-      <div class="cal-header">📅 July 2026</div>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            loadBookings();
+            setupEventListeners();
+            setInterval(loadBookings, 3000); // Auto-refresh every 3 seconds
+        });
 
-      <div class="day-labels">
-        <div class="day-label">Sun</div>
-        <div class="day-label">Mon</div>
-        <div class="day-label">Tue</div>
-        <div class="day-label">Wed</div>
-        <div class="day-label">Thu</div>
-        <div class="day-label">Fri</div>
-        <div class="day-label">Sat</div>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-    </div>
+        function setupEventListeners() {
+            document.getElementById('prevMonth').addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentMonth === 7 && currentYear === 2026) {
+                    return; // Don't go before July 2026
+                }
+                currentMonth--;
+                if (currentMonth < 1) {
+                    currentMonth = 12;
+                    currentYear--;
+                }
+                renderCalendar();
+            });
 
-    <div class="loading" id="loadingMsg">Loading bookings…</div>
-    <button class="btn" id="submitBtn" style="display:none" onclick="submitSurvey()">✅ Confirm My Duty Date</button>
-    <div class="toast" id="toast"></div>
-  </div>
+            document.getElementById('nextMonth').addEventListener('click', (e) => {
+                e.preventDefault();
+                currentMonth++;
+                if (currentMonth > 12) {
+                    currentMonth = 1;
+                    currentYear++;
+                }
+                renderCalendar();
+            });
 
-  <div class="bookings-section">
-    <h3>📋 Current Duty Schedule</h3>
-    <div id="bookingsList"><p class="no-bookings">Loading…</p></div>
-    <button class="export-btn" onclick="exportToExcel()">📊 Export to Excel</button>
-  </div>
-</div>
+            document.getElementById('surveyForm').addEventListener('submit', handleSubmit);
+        }
 
-<script>
-  // ── LocalStorage Configuration ──
-  const STORAGE_KEY = "marketDutyBookings";
+        function renderCalendar() {
+            const calendarDays = document.getElementById('calendarDays');
+            const monthYear = document.getElementById('monthYear');
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                             'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            monthYear.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
+            
+            // Clear previous days
+            calendarDays.innerHTML = '';
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            
+            // Add empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                calendarDays.appendChild(emptyDay);
+            }
+            
+            // Add days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
+                
+                const dateStr = formatDate(new Date(currentYear, currentMonth - 1, day));
+                
+                // Check if date is booked
+                const isBooked = bookings.some(b => b.date === dateStr);
+                
+                // Disable past dates (only if viewing July 2026)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const cellDate = new Date(currentYear, currentMonth - 1, day);
+                cellDate.setHours(0, 0, 0, 0);
+                const isPast = cellDate < today && currentMonth === 7 && currentYear === 2026;
+                
+                if (isBooked) {
+                    dayCell.classList.add('booked');
+                    dayCell.style.cursor = 'not-allowed';
+                } else if (isPast) {
+                    dayCell.classList.add('disabled');
+                } else {
+                    dayCell.addEventListener('click', () => selectDate(dateStr, dayCell));
+                }
+                
+                if (selectedDate === dateStr) {
+                    dayCell.classList.add('selected');
+                }
+                
+                calendarDays.appendChild(dayCell);
+            }
+        }
 
-  // ── State ──
-  let selectedDate = null;
-  let bookings = {}; // { "2026-07-DD": "Name" }
+        function selectDate(dateStr, element) {
+            // Remove previous selection
+            document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            selectedDate = dateStr;
+            element.classList.add('selected');
+            
+            const date = new Date(dateStr);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formatted = date.toLocaleDateString('en-US', options);
+            
+            const selectedDateDiv = document.getElementById('selectedDate');
+            selectedDateDiv.innerHTML = `✓ Selected: <strong>${formatted}</strong>`;
+            selectedDateDiv.classList.add('active');
+        }
 
-  // July 2026: starts on Wednesday (day index 3), 31 days
-  const YEAR = 2026, MONTH = 6; // JS month 0-indexed
-  const TOTAL_DAYS = 31;
-  const START_DOW  = new Date(2026, 6, 1).getDay(); // Dynamically get correct DOW
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
 
-  // ── LocalStorage Functions ──
-  function loadBookings() {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      bookings = stored ? JSON.parse(stored) : {};
-    } catch (e) {
-      console.error("Error loading bookings:", e);
-      bookings = {};
-    }
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('memberName').value.trim();
+            const messageDiv = document.getElementById('formMessage');
+            
+            if (!name) {
+                showMessage('Please enter your name', 'error', messageDiv);
+                return;
+            }
+            
+            if (!selectedDate) {
+                showMessage('Please select a date', 'error', messageDiv);
+                return;
+            }
+            
+            // Check if name already exists
+            if (bookings.some(b => b.name.toLowerCase() === name.toLowerCase())) {
+                showMessage('This name is already registered. Each member can only book once.', 'error', messageDiv);
+                return;
+            }
+            
+            // Check if date is already booked
+            if (bookings.some(b => b.date === selectedDate)) {
+                showMessage('This date is already booked by someone else!', 'error', messageDiv);
+                renderCalendar();
+                return;
+            }
+            
+            // Add booking
+            const newBooking = {
+                name: name,
+                date: selectedDate,
+                timestamp: new Date().toISOString()
+            };
+            
+            bookings.push(newBooking);
+            
+            // Save to localStorage
+            saveBookings();
+            
+            showMessage(`✓ Success! ${name} is scheduled for ${selectedDate}`, 'success', messageDiv);
+            
+            // Reset form
+            setTimeout(() => {
+                document.getElementById('surveyForm').reset();
+                selectedDate = null;
+                document.getElementById('selectedDate').classList.remove('active');
+                document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                renderCalendar();
+                loadBookings();
+                messageDiv.innerHTML = '';
+            }, 2000);
+        }
 
-    renderCalendar();
-    renderBookingsList();
-    document.getElementById("loadingMsg").style.display = "none";
-    document.getElementById("submitBtn").style.display = "block";
-  }
+        function saveBookings() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+            } catch (error) {
+                console.error('Error saving bookings:', error);
+                showMessage('Error saving booking. Please try again.', 'error', document.getElementById('formMessage'));
+            }
+        }
 
-  function saveBookings() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-      return true;
-    } catch (e) {
-      console.error("Error saving bookings:", e);
-      showToast("❌ Error saving to local storage.", true);
-      return false;
-    }
-  }
+        function loadBookings() {
+            try {
+                // Load from localStorage
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    bookings = JSON.parse(stored);
+                } else {
+                    bookings = [];
+                }
+                
+                updateBookingsList();
+                renderCalendar();
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+            }
+        }
 
-  function exportToExcel() {
-    try {
-      const data = [];
-      
-      // Add header
-      data.push(["Date", "Day", "Name"]);
-      
-      // Add booking entries
-      Object.entries(bookings).sort((a, b) => a[0].localeCompare(b[0])).forEach(([key, name]) => {
-        const day = parseInt(key.split("-")[2]);
-        const date = new Date(2026, 6, day);
-        const weekday = date.toLocaleDateString("en-IN", { weekday: "long" });
-        const fullDate = `July ${day}, 2026`;
-        data.push([fullDate, weekday, name]);
-      });
+        function updateBookingsList() {
+            const bookingsList = document.getElementById('bookingsList');
+            const totalBookings = document.getElementById('totalBookings');
+            const availableDates = document.getElementById('availableDates');
+            
+            totalBookings.textContent = bookings.length;
+            availableDates.textContent = 31 - bookings.length;
+            
+            if (bookings.length === 0) {
+                bookingsList.innerHTML = '<div class="empty-message">No bookings yet. Be the first to schedule your visit!</div>';
+                return;
+            }
+            
+            // Sort bookings by date
+            const sorted = [...bookings].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            bookingsList.innerHTML = sorted.map((booking, index) => {
+                const date = new Date(booking.date);
+                const formatted = date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                return `
+                    <div class="booking-item">
+                        <div class="booking-info">
+                            <div class="booking-date">${formatted}</div>
+                            <div class="booking-name">👤 ${booking.name}</div>
+                        </div>
+                        <div class="booking-badge">#${index + 1}</div>
+                    </div>
+                `;
+            }).join('');
+        }
 
-      // Create workbook
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Market Duty");
+        function exportToExcel() {
+            try {
+                const data = [];
+                
+                // Add header
+                data.push(["Date", "Day", "Name"]);
+                
+                // Add booking entries
+                const sorted = [...bookings].sort((a, b) => new Date(a.date) - new Date(b.date));
+                sorted.forEach((booking, index) => {
+                    const date = new Date(booking.date);
+                    const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+                    const fullDate = `July ${date.getDate()}, 2026`;
+                    data.push([fullDate, weekday, booking.name]);
+                });
 
-      // Style the header row
-      ws['A1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2d6a4f" } } };
-      ws['B1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2d6a4f" } } };
-      ws['C1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2d6a4f" } } };
+                // Create workbook
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Market Bookings");
 
-      // Auto-fit columns
-      ws['!cols'] = [{ wch: 15 }, { wch: 12 }, { wch: 20 }];
+                // Style the header row
+                ws['A1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "667eea" } } };
+                ws['B1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "667eea" } } };
+                ws['C1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "667eea" } } };
 
-      // Download
-      XLSX.writeFile(wb, `Market_Duty_July2026_${new Date().toISOString().split('T')[0]}.xlsx`);
-      showToast(`📊 Excel file downloaded!`);
-    } catch (e) {
-      console.error("Error exporting to Excel:", e);
-      showToast("❌ Error exporting to Excel.", true);
-    }
-  }
+                // Auto-fit columns
+                ws['!cols'] = [{ wch: 15 }, { wch: 12 }, { wch: 20 }];
 
-  // ── Calendar ──
-  function dateKey(day) {
-    return `2026-07-${String(day).padStart(2,"0")}`;
-  }
+                // Download
+                XLSX.writeFile(wb, `Market_Bookings_July2026_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showMessage('📊 Excel file downloaded!', 'success', document.getElementById('formMessage'));
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                showMessage('Error exporting to Excel. Please try again.', 'error', document.getElementById('formMessage'));
+            }
+        }
 
-  function renderCalendar() {
-    const grid = document.getElementById("calGrid");
-    grid.innerHTML = "";
-
-    // Empty cells before July 1
-    for (let i = 0; i < START_DOW; i++) {
-      const empty = document.createElement("div");
-      empty.className = "cal-day empty";
-      grid.appendChild(empty);
-    }
-
-    for (let d = 1; d <= TOTAL_DAYS; d++) {
-      const key   = dateKey(d);
-      const takenBy = bookings[key];
-      const isSelected = selectedDate === key;
-
-      const cell = document.createElement("div");
-      const dow = (START_DOW + (d - 1)) % 7;
-      cell.className = "cal-day";
-
-      const numEl = document.createElement("div");
-      numEl.className = "cal-day-num";
-      numEl.textContent = d;
-      cell.appendChild(numEl);
-
-      if (takenBy) {
-        cell.classList.add("taken");
-        cell.setAttribute("data-tooltip", `Taken by ${takenBy}`);
-        const nameEl = document.createElement("div");
-        nameEl.className = "taken-name";
-        nameEl.textContent = takenBy.split(" ")[0];
-        cell.appendChild(nameEl);
-      } else if (isSelected) {
-        cell.classList.add("selected");
-      } else {
-        cell.addEventListener("click", () => selectDate(key));
-      }
-
-      grid.appendChild(cell);
-    }
-  }
-
-  function selectDate(key) {
-    if (bookings[key]) return;
-    selectedDate = (selectedDate === key) ? null : key;
-    renderCalendar();
-  }
-
-  // ── Bookings list ──
-  function renderBookingsList() {
-    const el = document.getElementById("bookingsList");
-    const entries = Object.entries(bookings).sort((a,b) => a[0].localeCompare(b[0]));
-    if (!entries.length) {
-      el.innerHTML = '<p class="no-bookings">No dates booked yet. Be the first!</p>';
-      return;
-    }
-    el.innerHTML = entries.map(([key, name]) => {
-      const day = parseInt(key.split("-")[2]);
-      const date = new Date(2026, 6, day);
-      const weekday = date.toLocaleDateString("en-IN", { weekday: "short" });
-      return `<div class="booking-item">
-        <span class="booking-date">Jul ${day}</span>
-        <span style="color:var(--gray);font-size:.8rem">${weekday}</span>
-        <span class="booking-name">🧑 ${name}</span>
-      </div>`;
-    }).join("");
-  }
-
-  // ── Submit ──
-  function showToast(msg, isError = false) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.className = "toast show" + (isError ? " error" : "");
-    setTimeout(() => t.className = "toast", 4000);
-  }
-
-  async function submitSurvey() {
-    const name = document.getElementById("name").value.trim();
-    if (!name)         { showToast("⚠️ Please enter your name.", true); return; }
-    if (!selectedDate) { showToast("⚠️ Please select a date on the calendar.", true); return; }
-    if (bookings[selectedDate]) { showToast("⚠️ That date was just taken! Please pick another.", true); renderCalendar(); return; }
-
-    // Check if this name already booked
-    const existingEntry = Object.entries(bookings).find(([,n]) => n.toLowerCase() === name.toLowerCase());
-    if (existingEntry) {
-      const [existKey] = existingEntry;
-      const day = parseInt(existKey.split("-")[2]);
-      showToast(`⚠️ You already booked July ${day}. Each person can only pick one date.`, true);
-      return;
-    }
-
-    bookings[selectedDate] = name;
-    const day = parseInt(selectedDate.split("-")[2]);
-
-    const saved = saveBookings();
-    if (saved) {
-      showToast(`🎉 Done! ${name} is on duty for July ${day}, 2026.`);
-      selectedDate = null;
-      document.getElementById("name").value = "";
-      renderCalendar();
-      renderBookingsList();
-    }
-  }
-
-  // ── Init ──
-  loadBookings();
-</script>
+        function showMessage(text, type, element) {
+            element.textContent = text;
+            element.className = `message ${type}`;
+            setTimeout(() => {
+                element.className = 'message';
+            }, 5000);
+        }
+    </script>
 </body>
 </html>
