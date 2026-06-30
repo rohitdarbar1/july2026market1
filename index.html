@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🥦 Market Duty Survey – July 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap');
 
@@ -216,6 +217,13 @@
   .btn:hover  { background: #1b4332; }
   .btn:active { transform: scale(.98); }
 
+  .btn-secondary {
+    background: var(--amber);
+    color: #333;
+    margin-top: 8px;
+  }
+  .btn-secondary:hover { background: #d4a957; }
+
   /* ── Toast ── */
   .toast {
     display: none;
@@ -244,32 +252,20 @@
   .booking-name { color: #333; }
   .no-bookings  { color: var(--gray); font-size: .88rem; font-style: italic; }
 
-  /* ── Manager Card ── */
-  .manager-card {
-    margin: 0 32px 24px;
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1.5px solid var(--green-lt);
-    border-radius: 14px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
+  .export-btn {
+    width: 100%;
+    padding: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
   }
-  .manager-avatar {
-    width: 48px; height: 48px;
-    background: var(--green);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem;
-    flex-shrink: 0;
-  }
-  .manager-info { flex: 1; }
-  .manager-label { font-size: .72rem; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
-  .manager-name  { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: #1b4332; }
-  .manager-contact { font-size: .85rem; color: var(--gray); margin-top: 3px; }
-  .manager-contact a { color: var(--green); text-decoration: none; font-weight: 600; }
-  .manager-contact a:hover { text-decoration: underline; }
-  
+  .export-btn:hover { background: #218838; }
+
   /* ── Loading ── */
   .loading { text-align: center; color: var(--gray); font-size: .88rem; padding: 12px 0; }
 </style>
@@ -324,12 +320,13 @@
   <div class="bookings-section">
     <h3>📋 Current Duty Schedule</h3>
     <div id="bookingsList"><p class="no-bookings">Loading…</p></div>
+    <button class="export-btn" onclick="exportToExcel()">📊 Export to Excel</button>
   </div>
 </div>
 
 <script>
-  // ── JSON Server Configuration ──
-  const JSON_SERVER_URL = "http://localhost:3000"; // Change to your deployed JSON Server URL
+  // ── LocalStorage Configuration ──
+  const STORAGE_KEY = "marketDutyBookings";
 
   // ── State ──
   let selectedDate = null;
@@ -340,28 +337,13 @@
   const TOTAL_DAYS = 31;
   const START_DOW  = new Date(2026, 6, 1).getDay(); // Dynamically get correct DOW
 
-  // ── JSON Server Data Functions ──
-  async function loadBookings() {
+  // ── LocalStorage Functions ──
+  function loadBookings() {
     try {
-      const resp = await fetch(`${JSON_SERVER_URL}/bookings`);
-
-      if (resp.ok) {
-        const data = await resp.json();
-        // Convert array to object format if needed
-        if (Array.isArray(data)) {
-          bookings = {};
-          data.forEach(item => {
-            bookings[item.date] = item.name;
-          });
-        } else {
-          bookings = data || {};
-        }
-      } else {
-        bookings = {};
-      }
+      const stored = localStorage.getItem(STORAGE_KEY);
+      bookings = stored ? JSON.parse(stored) : {};
     } catch (e) {
       console.error("Error loading bookings:", e);
-      showToast("⚠️ Could not connect to server. Make sure JSON Server is running.", true);
       bookings = {};
     }
 
@@ -371,25 +353,52 @@
     document.getElementById("submitBtn").style.display = "block";
   }
 
-  async function saveBookings() {
+  function saveBookings() {
     try {
-      // Send updated data to JSON Server
-      const resp = await fetch(`${JSON_SERVER_URL}/bookings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookings)
-      });
-
-      if (resp.ok) {
-        return true;
-      } else {
-        showToast(`❌ Save failed: Server error`, true);
-        return false;
-      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+      return true;
     } catch (e) {
       console.error("Error saving bookings:", e);
-      showToast("❌ Network error while saving. Check if JSON Server is running.", true);
+      showToast("❌ Error saving to local storage.", true);
       return false;
+    }
+  }
+
+  function exportToExcel() {
+    try {
+      const data = [];
+      
+      // Add header
+      data.push(["Date", "Day", "Name"]);
+      
+      // Add booking entries
+      Object.entries(bookings).sort((a, b) => a[0].localeCompare(b[0])).forEach(([key, name]) => {
+        const day = parseInt(key.split("-")[2]);
+        const date = new Date(2026, 6, day);
+        const weekday = date.toLocaleDateString("en-IN", { weekday: "long" });
+        const fullDate = `July ${day}, 2026`;
+        data.push([fullDate, weekday, name]);
+      });
+
+      // Create workbook
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Market Duty");
+
+      // Style the header row
+      ws['A1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2d6a4f" } } };
+      ws['B1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2d6a4f" } } };
+      ws['C1'].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2d6a4f" } } };
+
+      // Auto-fit columns
+      ws['!cols'] = [{ wch: 15 }, { wch: 12 }, { wch: 20 }];
+
+      // Download
+      XLSX.writeFile(wb, `Market_Duty_July2026_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showToast(`📊 Excel file downloaded!`);
+    } catch (e) {
+      console.error("Error exporting to Excel:", e);
+      showToast("❌ Error exporting to Excel.", true);
     }
   }
 
@@ -416,8 +425,7 @@
 
       const cell = document.createElement("div");
       const dow = (START_DOW + (d - 1)) % 7;
-      const isChicken = dow === 2 || dow === 5;
-      cell.className = "cal-day" + (isChicken ? " chicken-day" : "");
+      cell.className = "cal-day";
 
       const numEl = document.createElement("div");
       numEl.className = "cal-day-num";
@@ -493,7 +501,7 @@
     bookings[selectedDate] = name;
     const day = parseInt(selectedDate.split("-")[2]);
 
-    const saved = await saveBookings();
+    const saved = saveBookings();
     if (saved) {
       showToast(`🎉 Done! ${name} is on duty for July ${day}, 2026.`);
       selectedDate = null;
